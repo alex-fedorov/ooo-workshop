@@ -1,0 +1,14 @@
+- draw()
+- hide()
+- resize(a, b), move(x, y), rotate(alpha)
+- area() -> Float
+- center() -> Point
+- perimeter() -> Float
+- contains(Either{ Shape | Point })
+- width() -> Float, height() -> Float
+- square?() -> Bool
+- 
+
+Probability:
+
+It understands how to deal with chance of some event happening.
