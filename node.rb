@@ -23,7 +23,7 @@ class Edge < Struct.new(:node, :costs)
   end
 
   def path_cost(other, visited)
-    node._hop_count(other, visited) + 1
+    node._path_cost(other, visited) + least_cost
   end
 end
 
@@ -48,6 +48,12 @@ class Node < Struct.new(:name)
     end
   end
 
+  def path_cost(other)
+    _path_cost(other).tap do |t|
+      raise UnreachableNodeError if t >= Unreachable
+    end
+  end
+
   def inspect
     "Node: #{name}"
   end
@@ -55,6 +61,11 @@ class Node < Struct.new(:name)
   def _hop_count(other, visited = [])
     return 0 if self.eql?(other)
     neighbours_hop_counts(other, visited).min || Unreachable
+  end
+
+  def _path_cost(other, visited = [])
+    return 0 if self.eql?(other)
+    neighbours_path_costs(other, visited).min || Unreachable
   end
 
   private
@@ -66,6 +77,12 @@ class Node < Struct.new(:name)
   def neighbours_hop_counts(other, visited)
     unvisited_neighbours(visited).map { |x|
       x.hop_count(other, visited)
+    }
+  end
+
+  def neighbours_path_costs(other, visited)
+    unvisited_neighbours(visited).map { |x|
+      x.path_cost(other, visited)
     }
   end
 

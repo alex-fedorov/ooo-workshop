@@ -41,4 +41,7 @@ RSpec.describe 'Node' do
   it { expect(d.hop_count(f)).to eq(3) }
   it { expect(b.hop_count(b)).to eq(0) }
   it { expect{ b.hop_count(g) }.to raise_error(Node::UnreachableNodeError) }
+
+  it { expect(b.path_cost(f)).to eq(5) }
+  it { expect(b.path_cost(e)).to eq(10) }
 end
