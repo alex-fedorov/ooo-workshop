@@ -23,10 +23,6 @@ module ValidatableStruct
 
       def validate!
       end
-
-      def self.call(*properties)
-        new(*properties)
-      end
     end
   end
 end
@@ -36,24 +32,31 @@ class Volume < ValidatableStruct.new(:volume)
 
   BASE_VOLUME = 1
 
-  Base = new(BASE_VOLUME)
-  Teaspoon = new(1)
-  Tablespoon = new(3)
-  Ounce = new(6)
-  Cup = new(48)
-  Pint = new(96)
-  Quart = new(192)
-  Gallon = new(768)
+  def self.def_unit(name, visible: true, &blk)
+    volume = new(0).instance_eval(&blk)
+    const_set(name, new(volume))
+    @units ||= []
+    @units.push(name.to_s) if visible
+  end
 
-  UNITS = %w(Teaspoon Tablespoon Ounce Cup Pint Quart Gallon)
+  def_unit(:Base, visible: false) { BASE_VOLUME }
+  def_unit(:Teaspoon) { 1 * Base.volume }
+  def_unit(:Tablespoon) { 3 * Teaspoon.volume }
+  def_unit(:Ounce) { 2 * Tablespoon.volume }
+  def_unit(:Cup) { 8 * Ounce.volume }
+  def_unit(:Pint) { 2 * Cup.volume }
+  def_unit(:Quart) { 2 * Pint.volume }
+  def_unit(:Gallon) { 4 * Quart.volume }
+  def_unit(:Barrel) { 10 * Gallon.volume }
 
   def conversion_rate_for(other)
     1.0 * self.volume / other.volume
   end
 
   def self.install_core_extensions
+    units = @units
     Numeric.class_eval do
-      UNITS.each do |unit_name|
+      units.each do |unit_name|
         downcased = unit_name.downcase
 
         [downcased, "#{downcased}s"].each do |name|
@@ -64,6 +67,7 @@ class Volume < ValidatableStruct.new(:volume)
       end
     end
   end
+
 end
 
 class Amount < ValidatableStruct.new(:quantity, :unit)
@@ -103,7 +107,10 @@ class Amount < ValidatableStruct.new(:quantity, :unit)
   end
 
   def simple_op(op, other)
-    self.class.new(converted_quantity(other.unit).public_send(op, other.quantity), other.unit)
+    self.class.new(
+      converted_quantity(other.unit).public_send(op, other.quantity),
+      other.unit
+    )
   end
 end
 
@@ -115,15 +122,17 @@ RSpec.describe "Amount & Volume" do
     expect(2.pints).not_to eq(1.pint)
 
     expect(3.pints).not_to eq(2.pints)
-    expect(2.pints).not_to eq(Object)
-    expect(2.pints).not_to eq(nil)
+    expect(2.quarts).not_to eq(Object)
+    expect(2.tablespoons).not_to eq(nil)
     expect(3.pints).to eq(96.tablespoons)
+
+    expect { nil.pints }.to raise_error(NoMethodError)
   end
 
   it "plays good with INFINITY" do
     expect(Float::INFINITY.pints).to eq(Float::INFINITY.cups)
-    expect(-Float::INFINITY.pints).not_to eq(Float::INFINITY.cups)
-    expect(-Float::INFINITY.pints).to eq(-Float::INFINITY.cups)
+    expect(-Float::INFINITY.ounces).not_to eq(Float::INFINITY.cups)
+    expect(-Float::INFINITY.pints).to eq(-Float::INFINITY.ounces)
   end
 
   it "is comparable" do
@@ -152,7 +161,7 @@ RSpec.describe "Amount & Volume" do
   end
 
   it "divide by 0 and working with NaN" do
-    expect(2.pints / 0.cups).to eq(Float::INFINITY.gallons)
+    expect(2.barrels / 0.cups).to eq(Float::INFINITY.gallons)
 
     expect { Float::NAN.pints }.to raise_error
   end
