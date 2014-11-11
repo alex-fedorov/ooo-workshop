@@ -1,4 +1,5 @@
 require 'rspec'
+require_relative 'championship'
 require_relative 'temperature'
 
 RSpec.describe 'Temperatures' do
@@ -78,4 +79,15 @@ RSpec.describe "1st order unit conversions" do
     expect { 2.feet + 3.ounces }.to raise_error(ArgumentError)
   end
 
+end
+
+RSpec.describe "Championship for unit" do
+  let(:some_units) { [11.teaspoons, 3.tablespoons, 1.quarts, 4.teaspoons, 3.pints] }
+  let(:bad_list) { [11.teaspoons, 3.inches, 1.quarts, 4.teaspoons, 3.pints] }
+  let(:sorted_units) { [4.teaspoons, 3.tablespoons, 11.teaspoons, 1.quarts, 3.pints] }
+
+  it { expect(Championship.sort(some_units)).to eq(sorted_units) }
+  it { expect(Championship.max(some_units)).to eq(3.pints) }
+
+  it { expect { Championship.max(bad_list) }.to raise_error }
 end

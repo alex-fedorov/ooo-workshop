@@ -1,3 +1,5 @@
+require_relative "championship"
+
 class Interval < Struct.new(:value, :unit)
   EPS = 1e-9
 
@@ -15,6 +17,13 @@ class Interval < Struct.new(:value, :unit)
     return false unless self.compatible?(other)
 
     (self.convert_to_base - other.convert_to_base).abs < EPS
+  end
+
+  def compare(other)
+    raise ArgumentError unless compatible?(other)
+    return Championship::Equal if self == other
+    return Championship::Less if self.convert_to_base < other.convert_to_base
+    Championship::Greater
   end
 
   def -(other)
