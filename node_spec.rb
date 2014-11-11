@@ -9,14 +9,6 @@ RSpec.describe 'Edge' do
   it { expect(Edge[Node[:a], [1, 2, 3]]).not_to eq("a string") }
 
   it { expect(Edge[Node[:a], [1, 2, 3]].hash).to eq(Edge[Node[:a]].hash) }
-
-  it nil, :focus do
-    expect([Edge[Node[:a]], Edge[Node[:b]], Edge[Node[:c]]] -
-      [Edge[Node[:a]], Edge[Node[:c]]]).to eq([Edge[Node[:b]]])
-
-    expect([Edge[Node[:a], [3, 4]], Edge[Node[:b], [5]], Edge[Node[:c], [1]]] -
-      [Edge[Node[:a], [0]], Edge[Node[:c], [1]]]).to eq([Edge[Node[:b]]])
-  end
 end
 
 RSpec.describe 'Node' do

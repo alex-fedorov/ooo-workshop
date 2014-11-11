@@ -18,12 +18,12 @@ class Edge < Struct.new(:node, :costs)
     node.hash
   end
 
-  def hop_count(other, visited)
-    node._hop_count(other, visited) + 1
+  def hop_count(*args)
+    node._hop_count(*args) + 1
   end
 
-  def path_cost(other, visited)
-    node._path_cost(other, visited) + least_cost
+  def path_cost(*args)
+    node._path_cost(*args) + least_cost
   end
 end
 
@@ -43,50 +43,50 @@ class Node < Struct.new(:name)
   end
 
   def hop_count(other)
-    _hop_count(other).tap do |t|
-      raise UnreachableNodeError if t >= Unreachable
-    end
+    raise_if_unreachable(_hop_count(other))
   end
 
   def path_cost(other)
-    _path_cost(other).tap do |t|
-      raise UnreachableNodeError if t >= Unreachable
-    end
+    raise_if_unreachable(_path_cost(other))
   end
 
   def inspect
-    "Node: #{name}"
+    "#{name}"
   end
 
-  def _hop_count(other, visited = [])
-    return 0 if self.eql?(other)
-    neighbours_hop_counts(other, visited).min || Unreachable
+  def _hop_count(*args)
+    _deep_walk(*args, &:hop_count)
   end
 
-  def _path_cost(other, visited = [])
-    return 0 if self.eql?(other)
-    neighbours_path_costs(other, visited).min || Unreachable
+  def _path_cost(*args)
+    _deep_walk(*args, &:path_cost)
   end
 
   private
 
+  def _deep_walk(other, visited = [], &blk)
+    return 0 if self.eql?(other)
+    unvisited_neighbours_do(other, visited_with_self(visited), &blk).min || Unreachable
+  end
+
   def unvisited_neighbours(visited)
-    neighbours - (visited << Edge[self])
+    neighbours - visited
   end
 
-  def neighbours_hop_counts(other, visited)
-    unvisited_neighbours(visited).map { |x|
-      x.hop_count(other, visited)
-    }
+  def visited_with_self(visited)
+    visited.dup << Edge[self]
   end
 
-  def neighbours_path_costs(other, visited)
-    unvisited_neighbours(visited).map { |x|
-      x.path_cost(other, visited)
-    }
+  def unvisited_neighbours_do(other, visited, &blk)
+    unvisited_neighbours(visited).map { |edge| blk[edge, other, visited] }
   end
 
   def neighbours
     @_neighbours ||= []
+  end
+
+  def raise_if_unreachable(value)
+    raise UnreachableNodeError if value >= Unreachable
+    value
   end
 end
