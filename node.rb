@@ -43,11 +43,11 @@ class Node < Struct.new(:name)
   end
 
   def hop_count(other)
-    raise_if_unreachable(_hop_count(other))
+    fails_for_unreachable(_hop_count(other))
   end
 
   def path_cost(other)
-    raise_if_unreachable(_path_cost(other))
+    fails_for_unreachable(_path_cost(other))
   end
 
   def inspect
@@ -66,14 +66,14 @@ class Node < Struct.new(:name)
 
   def _deep_walk(other, visited = [], &blk)
     return 0 if self.eql?(other)
-    unvisited_neighbours_do(other, visited_with_self(visited), &blk).min || Unreachable
+    min(unvisited_neighbours_do(other, visit(visited), &blk))
   end
 
   def unvisited_neighbours(visited)
     neighbours - visited
   end
 
-  def visited_with_self(visited)
+  def visit(visited)
     visited.dup << Edge[self]
   end
 
@@ -85,8 +85,12 @@ class Node < Struct.new(:name)
     @_neighbours ||= []
   end
 
-  def raise_if_unreachable(value)
+  def fails_for_unreachable(value)
     raise UnreachableNodeError if value >= Unreachable
     value
+  end
+
+  def min(list)
+    list.min || Unreachable
   end
 end
