@@ -1,16 +1,6 @@
 require 'rspec'
 require_relative 'node'
 
-RSpec.describe 'Edge' do
-  it { expect(Edge[Node[:a], [1, 2, 3]]).to eq(Edge[Node[:a]]) }
-  it { expect(Edge[Node[:a], [1, 2, 3]]).not_to eq(Edge[Node[:b]]) }
-  it { expect(Edge[Node[:a], [1, 2, 3]]).not_to eq(Object.new) }
-  it { expect(Edge[Node[:a], [1, 2, 3]]).not_to eq(nil) }
-  it { expect(Edge[Node[:a], [1, 2, 3]]).not_to eq("a string") }
-
-  it { expect(Edge[Node[:a], [1, 2, 3]].hash).to eq(Edge[Node[:a]].hash) }
-end
-
 RSpec.describe 'Node' do
   let(:a) { Node[:a] }
   let(:b) { Node[:b] }

@@ -1,29 +1,16 @@
 class Edge < Struct.new(:node, :costs)
-  protected :node, :costs
+  private :node, :costs
 
-  def least_cost
+  def _cost(*args, &blk)
+    node._cost(*args, &blk) + blk[self]
+  end
+
+  def hop_count
+    1
+  end
+
+  def path_cost
     costs.min
-  end
-
-  def ==(other)
-    return false unless self.class === other
-    self.node == other.node
-  end
-
-  def eql?(other)
-    self.node == other.node
-  end
-
-  def hash
-    node.hash
-  end
-
-  def hop_count(*args)
-    node._hop_count(*args) + 1
-  end
-
-  def path_cost(*args)
-    node._path_cost(*args) + least_cost
   end
 end
 
@@ -31,58 +18,47 @@ class Node < Struct.new(:name)
   Unreachable = Float::INFINITY
   UnreachableNodeError = Class.new(StandardError)
 
-  protected :name
+  private :name
 
   def edge(other, *weigths)
-    neighbours << Edge[other, weigths]
+    edges << Edge[other, weigths]
     other
   end
 
   def can_reach?(other)
-    _hop_count(other) < Unreachable
+    _cost(other, &:hop_count) < Unreachable
   end
 
   def hop_count(other)
-    fails_for_unreachable(_hop_count(other))
+    fails_for_unreachable(_cost(other, &:hop_count))
   end
 
   def path_cost(other)
-    fails_for_unreachable(_path_cost(other))
+    fails_for_unreachable(_cost(other, &:path_cost))
   end
 
   def inspect
     "#{name}"
   end
 
-  def _hop_count(*args)
-    _deep_walk(*args, &:hop_count)
-  end
-
-  def _path_cost(*args)
-    _deep_walk(*args, &:path_cost)
+  def _cost(other, visited_nodes = [], &blk)
+    return 0 if self.eql?(other)
+    return Unreachable if visited_nodes.include?(self)
+    min(edges_do(other, visited_nodes_with_self(visited_nodes), &blk))
   end
 
   private
 
-  def _deep_walk(other, visited = [], &blk)
-    return 0 if self.eql?(other)
-    min(unvisited_neighbours_do(other, visit(visited), &blk))
+  def visited_nodes_with_self(visited_nodes)
+    visited_nodes.dup << self
   end
 
-  def unvisited_neighbours(visited)
-    neighbours - visited
+  def edges_do(other, visited_nodes, &blk)
+    edges.map { |edge| edge._cost(other, visited_nodes, &blk) }
   end
 
-  def visit(visited)
-    visited.dup << Edge[self]
-  end
-
-  def unvisited_neighbours_do(other, visited, &blk)
-    unvisited_neighbours(visited).map { |edge| blk[edge, other, visited] }
-  end
-
-  def neighbours
-    @_neighbours ||= []
+  def edges
+    @_edges ||= []
   end
 
   def fails_for_unreachable(value)
@@ -90,7 +66,7 @@ class Node < Struct.new(:name)
     value
   end
 
-  def min(list)
-    list.min || Unreachable
+  def min(costs)
+    costs.min || Unreachable
   end
 end
