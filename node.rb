@@ -44,7 +44,7 @@ class Node < Struct.new(:name)
   def _cost(other, visited_nodes = [], &blk)
     return 0 if self.eql?(other)
     return Unreachable if visited_nodes.include?(self)
-    min(edges_do(other, visited_nodes_with_self(visited_nodes), &blk))
+    min(edge_costs(other, visited_nodes_with_self(visited_nodes), &blk))
   end
 
   private
@@ -53,7 +53,7 @@ class Node < Struct.new(:name)
     visited_nodes.dup << self
   end
 
-  def edges_do(other, visited_nodes, &blk)
+  def edge_costs(other, visited_nodes, &blk)
     edges.map { |edge| edge._cost(other, visited_nodes, &blk) }
   end
 
