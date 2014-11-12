@@ -1,6 +1,7 @@
 class Edge < Struct.new(:node, :costs)
   private :node, :costs
 
+  # TODO Cost strategy
   def _cost(*args, &blk)
     node._cost(*args, &blk) + blk[self]
   end
@@ -50,6 +51,9 @@ class Node < Struct.new(:name)
   private
 
   def visited_nodes_with_self(visited_nodes)
+    # NOTE with dup it is a backtrack search
+    # to turn it to depth-first search remove dup
+    # but this will make you get not least cost result
     visited_nodes.dup << self
   end
 
@@ -61,9 +65,9 @@ class Node < Struct.new(:name)
     @_edges ||= []
   end
 
-  def fails_for_unreachable(value)
-    raise UnreachableNodeError if value >= Unreachable
-    value
+  def fails_for_unreachable(cost)
+    raise UnreachableNodeError if cost >= Unreachable
+    cost
   end
 
   def min(costs)
