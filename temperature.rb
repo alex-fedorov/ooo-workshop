@@ -59,6 +59,16 @@ class Ratio < Interval
   end
 end
 
+class ZeroRatio < Ratio
+  def +(other)
+    other
+  end
+
+  def ==(other)
+    other.value.abs < Interval::EPS
+  end
+end
+
 class Unit < Struct.new(:name, :base_unit, :multiplier, :offset, :amount_factory)
   protected :name, :multiplier, :base_unit, :offset, :amount_factory
 

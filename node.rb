@@ -1,16 +1,14 @@
+require_relative 'temperature'
+
 class Edge < Struct.new(:node, :cost)
   private :node, :cost
 
   def self.total_cost(links)
-    links.inject(0) { |total, link| link.add_to(total) }
+    links.inject(ZeroRatio.new) { |total, link| link.add_to(total) }
   end
 
   def add_to(total)
     total + cost
-  end
-
-  def _path_to(*args)
-    node._path_to(*args) << self
   end
 
   def _paths_to(*args)
@@ -77,7 +75,7 @@ class Node < Struct.new(:name)
   end
 
   def can_reach?(other)
-    !(NoPath === _path_to(other))
+    _paths_to(other).any?
   end
 
   def hop_count(other)
@@ -89,24 +87,22 @@ class Node < Struct.new(:name)
   end
 
   def path_to(other)
-    fails_for_no_path(_path_to(other))
+    Path.cheapest(fails_for_no_path(_paths_to(other)))
   end
 
   def paths_to(other)
-    _paths_to(other, [])
+    _paths_to(other)
   end
 
   def inspect
     "#{name}"
   end
 
-  def _path_to(other, visited_nodes = [])
-    return Path.new if self.eql?(other)
-    return NoPath.new if visited_nodes.include?(self)
-    Path.cheapest(edge_paths(other, visited_nodes_with_self(visited_nodes)))
+  def _path_to(other)
+    Path.cheapest(_paths_to(other))
   end
 
-  def _paths_to(other, visited_nodes)
+  def _paths_to(other, visited_nodes = [])
     return [Path.new] if self.eql?(other)
     return [] if visited_nodes.include?(self)
     all_edge_paths(other, visited_nodes_with_self(visited_nodes))
@@ -130,8 +126,8 @@ class Node < Struct.new(:name)
     @_edges ||= []
   end
 
-  def fails_for_no_path(path)
-    raise UnreachableNodeError if NoPath === path
-    path
+  def fails_for_no_path(paths)
+    raise UnreachableNodeError if paths.empty?
+    paths
   end
 end
