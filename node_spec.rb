@@ -37,4 +37,9 @@ RSpec.describe 'Node' do
   it { expect(b.path_to(e).cost).to eq(10) }
 
   it { expect{ b.path_to(g) }.to raise_error(Node::UnreachableNodeError) }
+
+  it { expect(b.paths_to(e).count).to eq(3) }
+  it { expect(b.paths_to(e).map(&:cost)).to eq([12, 10, 15]) }
+
+  it { expect(b.paths_to(g)).to eq([]) }
 end

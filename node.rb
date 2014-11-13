@@ -1,16 +1,20 @@
-class Edge < Struct.new(:node, :costs)
-  private :node, :costs
+class Edge < Struct.new(:node, :cost)
+  private :node, :cost
 
   def self.total_cost(links)
     links.inject(0) { |total, link| link.add_to(total) }
   end
 
   def add_to(total)
-    total + costs.min
+    total + cost
   end
 
   def _path_to(*args)
     node._path_to(*args) << self
+  end
+
+  def _paths_to(*args)
+    node._paths_to(*args).map { |path| path << self }
   end
 end
 
@@ -68,7 +72,7 @@ class Node < Struct.new(:name)
   private :name
 
   def edge(other, *weigths)
-    edges << Edge[other, weigths]
+    weigths.each { |weigth| edges << Edge[other, weigth] }
     other
   end
 
@@ -88,6 +92,10 @@ class Node < Struct.new(:name)
     fails_for_no_path(_path_to(other))
   end
 
+  def paths_to(other)
+    _paths_to(other, [])
+  end
+
   def inspect
     "#{name}"
   end
@@ -98,6 +106,12 @@ class Node < Struct.new(:name)
     Path.cheapest(edge_paths(other, visited_nodes_with_self(visited_nodes)))
   end
 
+  def _paths_to(other, visited_nodes)
+    return [Path.new] if self.eql?(other)
+    return [] if visited_nodes.include?(self)
+    all_edge_paths(other, visited_nodes_with_self(visited_nodes))
+  end
+
   private
 
   def visited_nodes_with_self(visited_nodes)
@@ -106,6 +120,10 @@ class Node < Struct.new(:name)
 
   def edge_paths(other, visited_nodes)
     edges.map { |edge| edge._path_to(other, visited_nodes) }
+  end
+
+  def all_edge_paths(other, visited_nodes)
+    edges.map { |edge| edge._paths_to(other, visited_nodes.dup) }.inject(&:+) || []
   end
 
   def edges
